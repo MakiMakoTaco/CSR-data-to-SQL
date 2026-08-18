@@ -1,0 +1,19 @@
+class Mod {
+  id,
+  name,
+  link
+}
+
+class Gamebanana extends Mod {
+  gbTags,
+  description,
+  images
+}
+
+class Drive extends Mod {
+
+}
+
+const mod = new gamebanana
+
+mod typeof gamebanana

@@ -1,0 +1,8 @@
+# Secrets
+.env
+
+# node_modules
+node_modules/
+
+# output
+output/

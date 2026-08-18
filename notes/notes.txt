@@ -1,0 +1,155 @@
+letterToNumber(letter) {
+  return letter.toLowerCase().charCodeAt(0) - 97
+}
+
+each side =>
+  - check when start of tier
+  - create player index map:
+    column id => name: playerName
+  - create player map:
+    name (playerName) => id: player.size + 1,
+
+each side/DLC tier =>
+  - create side map:
+    name (sideName) => {
+      id: super-side = 1, [letter]-Side => letterToNumber(letter) + 2, catstare = 1000, DLC = 1000 + DLC number,
+      type: standard, catstare, dlc, other,
+      quickInstall: current cell => link
+
+      DLC also includes (null if not DLC):
+      clearsForRank: nameSplit ( Challenges - Clear Any [Number]),
+      color: cell of "DLC [number] Total (Out of y)" => column + 1 => conditional formatting: Value is between x and y,
+      colorPlus: current cell => effective format => background color
+      archived: sheetName = archived => true, else false
+    }
+
+each DLC background color change =>
+  - update tierName
+
+each new tier =>
+  - create tierPreset map:
+    name (tierName) => {
+      id: tierPreset map size + 1
+      appendSideName: 
+      color:
+      colorPlus:
+      sideIndex:
+    }
+
+each tier =>
+  - create tier map:
+    name (tierName) => {
+      id: below
+      sideId: side map get side name => id
+      presetId: tierPreset map get tier name => id
+
+      if not DLC:
+      clearsForRank: nameSplit ( Challenges - Clear Any [Number]),
+    }
+
+base tier id = {
+  side: 1,
+  catstare: 100000,
+  dlc: 101000
+}
+
+super side = 0 * letterTiers.length (7) + index of tier name (bronze = 0, silver = 1) + base tier id (1)
+letter side = letterToNumber + 1 * letterTiers.length (7) + index of tier name (bronze = 0, silver = 1) + base tier id (1)
+catstare = catstareTier.length - 1 + base tier id (100000)
+dlc = dlc number - 1 * dlctiers.length (7) + index of tier name (bronze = 0, silver = 1) + base tier id (101000)
+
+each mod =>
+  - send mod to be sorted
+  - in sort =>
+    check then create modSubmitter map:
+      name => {
+        id: modSubmitter map size + 1
+        profileUrl,
+        avatarUrl
+      }
+    create creditGroup map:
+      name => {
+        modDataId,
+        orderIndex
+      }
+    create authors map;
+      name => {
+        groupId: credit group map get name => id,
+        roleName: the name under the author on gb,
+        profileUrl,
+        extraUrl: ?,
+        avatarUrl?
+      }
+
+    - get map data inside mod
+    create map map:
+      name (from english.txt) => {
+        modDataId,
+        modIndex,
+        name
+      }
+    create modData map (gb specific will be null elsewhere):
+      link (sheet link to gb/google drive/docs) => {
+        id: modData map size + 1,
+        gbName,
+        isChild: if mod is inside a gb collection,
+        parentId,
+        submitterId: mod submitter get name of map submitter => id,
+        category: gb category,
+        version: gb version,
+        gbPage,
+        gbDownloadPage,
+        description: gb description,
+        text: gb text/google docs text,
+        media: gb media,
+        gbTags,
+        feedbackInstructions: gb feedback instructions,
+        createdAt: gb created at
+      }
+    create modRequirements map:
+      modId => {
+        orderIndex,
+        name,
+        url
+      }
+    create mod map:
+      name (on sheet) => {
+        modDataId,
+        tierId,
+        notes
+      }
+    create downloadLink map:
+      modDataId => {
+        orderIndex,
+        fileName: gb file name,
+        fileSize,
+        description: gb description,
+        manualUrl,
+        everestUrl: if gb has a quick install
+      }
+      
+    
+    if cell has a formatted(?) value =>
+      create playerProgress map:
+        name (name on sheet) => {
+          playerId,
+          modId,
+          cleared: true,
+          proof: cell link,
+          submittedAt: check form submission sheet => filter to player name => split maps by ',' => trim => search for map name
+        }
+
+
+
+
+on website, i should be able to see in which tiers the same mods are, mods with same download link should be available under similar/more
+
+mod with same link = same mod id and page
+domain/mods/id => if multiple different csr mods use the same link then another path with a subid /[1/2]
+
+if i need to clear maps when starting a new side, store all most recent ids in a separate map and check last id if map size = 0
+
+maps to not clear:
+- mod submitter
+- tier preset
+- modData (link => id)

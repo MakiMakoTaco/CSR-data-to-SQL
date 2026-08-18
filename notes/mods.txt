@@ -1,0 +1,28 @@
+modData: {
+  id,
+  gbName,
+  isChild,
+  parentId,
+  submitterId,
+  category,
+  version,
+  gbPage,
+  gbDownloadPage,
+  description,
+  text,
+  media,
+  gbTags,
+  feedbackInstructions,
+  tags,
+  createdAt
+}
+
+mod: {
+  id,
+  modDataId,
+  name,
+  requiredMapClears,
+  notes,
+  tierId,
+  connectedMods: [array of mods that when submitting to this one, can share the same proof]
+}
