@@ -4,6 +4,6 @@
 
 # To-do
 
-[ ] create the submitter and credit groups
-[ ] add mod to player class if cleared
-[ ] create mod class for each row, checking if it already has a mod data id
+- [ ] create the submitter and credit groups
+- [ ] add mod to player class if cleared
+- [ ] create mod class for each row, checking if it already has a mod data id
