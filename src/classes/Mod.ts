@@ -1,3 +1,4 @@
+import checkContributor from '../functions/utils/checkContributor';
 import CreditGroup from './CreditGroup';
 import CelesteMap from './Map';
 import Contributor from './ModContributor';
@@ -28,8 +29,22 @@ class BaseGameBanana extends BaseModData {
 	tags: string[];
 	media: string[];
 
-	constructor(id: number, submitterId: number, modData: any) {
+	constructor(
+		id: number,
+		contributors: Map<string, Contributor>,
+		modData: any,
+	) {
 		super(id);
+
+		const submitter: any = modData._aSubmitter;
+
+		contributors = checkContributor(contributors, submitter);
+		const contributor: Contributor | undefined = contributors.get(
+			submitter._sName,
+		);
+
+		let submitterId: number = 0;
+		if (contributor) submitterId = contributor.id;
 
 		this.submitterId = submitterId;
 		this.name = modData._sName;
@@ -59,11 +74,11 @@ class GameBananaParent extends BaseGameBanana {
 
 	constructor(
 		id: number,
-		submitterId: number,
+		contributors: Map<string, Contributor>,
 		modData: any,
 		children: GameBananaMod[] = [],
 	) {
-		super(id, submitterId, modData);
+		super(id, contributors, modData);
 
 		this.children = children;
 	}
@@ -82,13 +97,12 @@ class GameBananaMod extends BaseGameBanana {
 
 	constructor(
 		id: number,
-		submittedId: number,
 		creditGroupId: number,
 		contributors: Map<string, Contributor>,
 		modData: any,
 		maps: CelesteMap[] = [],
 	) {
-		super(id, submittedId, modData);
+		super(id, contributors, modData);
 
 		this.maps = maps;
 

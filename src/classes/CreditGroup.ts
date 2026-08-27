@@ -1,5 +1,6 @@
 import Author from './Author';
 import Contributor from './ModContributor';
+import checkContributor from '../functions/utils/checkContributor';
 
 class CreditGroup {
 	id: number;
@@ -22,25 +23,11 @@ class CreditGroup {
 
 		this.authors = [];
 		creditData._aAuthors.forEach((author: any, index: number) => {
-			let contributor = contributors.get(author._sName);
-
-			if (!contributor) {
-				const newContributor: Contributor = new Contributor(
-					contributors.size + 1,
-					author._sName,
-					author._ProfileUrl,
-					author._sAvatarUrl,
-				);
-
-				contributors.set(author._sName, newContributor);
-				contributor = contributors.get(author._sName);
-			} else if (author._sProfileUrl && !contributor.profileUrl) {
-				contributor.profileUrl = author._sProfileUrl;
-				contributor.avatarUrl = author._sAvatarUrl;
-			}
+			contributors = checkContributor(contributors, author);
+			const contributor = contributors.get(author._sName);
 
 			if (contributor) {
-				const creditAuthor = new Author(index, author._sRole, contributor?.id);
+				const creditAuthor = new Author(index, author._sRole, contributor.id);
 				this.authors.push(creditAuthor);
 			}
 		});
