@@ -52,6 +52,7 @@ async function getSheetData(filePath: string = join(__dirname, './sqlFiles')) {
 			modData: new Map(),
 			players: new Map(),
 			modId: 1,
+			modDataId: 1,
 			creditGroupId: 1,
 		};
 		for (let i = 0; i < sheetNames.data.sheets.length; i++) {

@@ -15,16 +15,17 @@ class Mod {
 
 class BaseModData {
 	id: number;
+	page: string;
 
-	constructor(id: number) {
+	constructor(id: number, page: string) {
 		this.id = id;
+		this.page = page;
 	}
 }
 
 class BaseGameBanana extends BaseModData {
 	name: string;
 	submitterId: number;
-	page: string;
 	text: string;
 	tags: string[];
 	media: string[];
@@ -34,7 +35,7 @@ class BaseGameBanana extends BaseModData {
 		contributors: Map<string, Contributor>,
 		modData: any,
 	) {
-		super(id);
+		super(id, modData._sProfileUrl);
 
 		const submitter: any = modData._aSubmitter;
 
@@ -48,7 +49,6 @@ class BaseGameBanana extends BaseModData {
 
 		this.submitterId = submitterId;
 		this.name = modData._sName;
-		this.page = modData._sProfileUrl;
 		this.text = modData._sText;
 		this.tags = [];
 		this.media = [];
@@ -97,7 +97,7 @@ class GameBananaMod extends BaseGameBanana {
 
 	constructor(
 		id: number,
-		creditGroupId: number,
+		lastCreditGroupId: number,
 		contributors: Map<string, Contributor>,
 		modData: any,
 		maps: CelesteMap[] = [],
@@ -116,7 +116,7 @@ class GameBananaMod extends BaseGameBanana {
 		this.credits = [];
 		modData._aCredits.forEach((group: any, index: number) => {
 			const creditGroup = new CreditGroup(
-				creditGroupId,
+				lastCreditGroupId,
 				index,
 				id,
 				group,
@@ -132,19 +132,20 @@ class GameBananaMod extends BaseGameBanana {
 }
 
 class GoogleDrive extends BaseModData {
+	// downloadPage: string;
 	maps: CelesteMap[];
 
-	constructor(id: number, maps: CelesteMap[] = []) {
-		super(id);
+	constructor(
+		id: number,
+		page: string,
+		downloadUrl: string,
+		maps: CelesteMap[] = [],
+	) {
+		super(id, page);
 
+		// this.downloadPage = downloadUrl;
 		this.maps = maps;
 	}
 }
 
-export type { BaseModData };
-export {
-	// Mod,
-	GameBananaParent,
-	GameBananaMod,
-	GoogleDrive,
-};
+export { Mod, BaseModData, GameBananaParent, GameBananaMod, GoogleDrive };

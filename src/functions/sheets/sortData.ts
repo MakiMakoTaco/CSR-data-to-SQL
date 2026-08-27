@@ -2,14 +2,13 @@
 
 // Types
 import type { sheets_v4 } from 'googleapis';
-import type { BaseModData } from '../../classes/Mod';
 import type { Color } from '../../types/Color';
 import type { Ids } from '../../types/Ids';
 
 // Classes
 import { Side, DLC } from '../../classes/Side';
 import { Tier, TierPreset } from '../../classes/Tier';
-// import { Mod } from '../../classes/Mod';
+import { BaseModData, Mod } from '../../classes/Mod';
 import { Player } from '../../classes/Player';
 
 // Utils
@@ -229,9 +228,11 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 		if (!hyperlink) continue;
 		// if (!hyperlink.includes('drive.google.com')) continue;
 
-		let modDataId: number = ids.modData.get(hyperlink) ?? ids.modData.size + 1;
+		let modDataId: number = ids.modData.get(hyperlink) ?? ids.modDataId;
 
 		if (!ids.modData.has(hyperlink)) {
+			ids.modData.set(hyperlink, modDataId);
+
 			let mod: BaseModData;
 
 			if (hyperlink.includes('gamebanana.com')) {
@@ -254,12 +255,22 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 				if (hyperlink.includes('/collections/')) {
 					console.log('Mod is a collection, fetching profile page');
 
-					const data = await fetchGameBananaParentData(ids.modId, gamebananaId);
-					ids.modId = data.modId;
+					const data = await fetchGameBananaParentData(
+						ids.modDataId,
+						gamebananaId,
+						ids.creditGroupId,
+						ids.contributors,
+					);
+					ids.modDataId = data.modDataId + 1;
 					mod = data.parent;
 				} else if (hyperlink.includes('/mods/')) {
-					mod = await fetchGameBananaModData(ids.modId, gamebananaId);
-					ids.modId++;
+					mod = await fetchGameBananaModData(
+						ids.modDataId,
+						gamebananaId,
+						ids.creditGroupId,
+						ids.contributors,
+					);
+					ids.modDataId++;
 				}
 			} else if (hyperlink.includes('drive.google.com')) {
 				const googleDriveId: string | undefined =
@@ -272,34 +283,40 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 					continue;
 				}
 
-				mod = await fetchGoogleDriveData(ids.modId, googleDriveId);
+				mod = await fetchGoogleDriveData(
+					ids.modDataId,
+					hyperlink,
+					googleDriveId,
+				);
+				ids.modDataId++;
+			} else if (hyperlink.includes('docs.google.com')) {
+				mod = new BaseModData(ids.modDataId, hyperlink);
+				ids.modDataId++;
 			} else {
 				console.error(
 					`Unable to create new BaseMod class for mod at row ${i + 1} (${cellText}, ${hyperlink})`,
 				);
 				continue;
 			}
-
-			ids.modData.set(hyperlink, modDataId);
 		}
 
-		// const mod = new Mod(
-		// 	ids.modId + 1,
-		// 	cellText,
-		// 	modDataId,
-		// 	tierId,
-		// 	rowValues[0].note ?? undefined,
-		// );
+		const mod = new Mod(
+			ids.modId,
+			cellText,
+			modDataId,
+			tierId,
+			rowValues[0].note ?? undefined,
+		);
 
-		// for (let index = 1; index < rowValues.length; index++) {
-		// 	const player = playerIndex[index - 1];
-		// 	const cleared = Boolean(rowValues[index]?.formattedValue);
-		// 	const proof = rowValues[index].hyperlink;
+		for (let index = 1; index < rowValues.length; index++) {
+			const player = playerIndex[index - 1];
+			const cleared = Boolean(rowValues[index]?.formattedValue);
+			const proof = rowValues[index].hyperlink;
 
-		// 	if (!player || !cleared || !proof) continue;
+			if (!player || !cleared || !proof) continue;
 
-		// 	player.addClear(mod.id, proof);
-		// }
+			player.addClear(ids.modId, proof);
+		}
 	}
 
 	if (!['DLC', 'Archived'].includes(sheetName)) {

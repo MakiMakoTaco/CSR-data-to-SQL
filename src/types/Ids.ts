@@ -6,6 +6,7 @@ interface Ids {
 	modData: Map<string, number>;
 	players: Map<string, number>;
 	modId: number;
+	modDataId: number;
 	creditGroupId: number;
 }
 

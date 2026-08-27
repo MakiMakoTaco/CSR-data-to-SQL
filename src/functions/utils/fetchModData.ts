@@ -5,18 +5,22 @@ import {
 } from '../../classes/Mod';
 import CelesteMap from '../../classes/Map';
 import createMaps from './getMapNames';
+import { google } from 'googleapis';
+import Contributor from '../../classes/ModContributor';
 
 const baseGamebananaUrl = 'https://gamebanana.com/apiv11';
 
 async function fetchGameBananaParentData(
-	modId: number,
+	modDataId: number,
 	parentGamebananaId: string | number,
+	lastCreditGroupId: number,
+	contributors: Map<string, Contributor>,
 ) {
 	const profileUrl: string = `${baseGamebananaUrl}/Collection/${parentGamebananaId}/ProfilePage`;
 	const profileResponse: Response = await fetch(profileUrl);
 	const parentProfile: any = await profileResponse.json();
 
-	const parent = new GameBananaParent(modId, parentGamebananaId);
+	const parent = new GameBananaParent(modDataId, contributors, parentProfile);
 
 	let page: number = 1;
 	let hasNextPage: boolean = true;
@@ -31,7 +35,7 @@ async function fetchGameBananaParentData(
 		const collectionPage: any = await collectionResponse.json();
 
 		for (let i = 0; i < collectionPage._aRecords.length; i++) {
-			modId++;
+			modDataId++;
 
 			const record: any = collectionPage._aRecords[i];
 			console.log(
@@ -49,8 +53,10 @@ async function fetchGameBananaParentData(
 			const childGamebananaId: string = record._sProfileUrl.split('/').pop();
 
 			const mod: GameBananaMod = await fetchGameBananaModData(
-				modId,
+				modDataId,
 				childGamebananaId,
+				lastCreditGroupId,
+				contributors,
 			);
 			parent.children.push(mod);
 		}
@@ -59,12 +65,14 @@ async function fetchGameBananaParentData(
 		page++;
 	}
 
-	return { modId, parent };
+	return { modDataId, parent };
 }
 
 async function fetchGameBananaModData(
-	modId: number,
+	modDataId: number,
 	gamebananaId: string | number,
+	lastCreditGroupId: number,
+	contributors: Map<string, Contributor>,
 ) {
 	const url: string = `${baseGamebananaUrl}/Mod/${gamebananaId}/ProfilePage`;
 	const modResponse: Response = await fetch(url);
@@ -72,27 +80,44 @@ async function fetchGameBananaModData(
 
 	const maps: CelesteMap[] = [];
 	try {
-		maps.push(...(await createMaps(modId, modData._aFiles[0]._sDownloadUrl)));
+		maps.push(
+			...(await createMaps(modDataId, modData._aFiles[0]._sDownloadUrl)),
+		);
 	} catch (error) {
 		console.error(error);
 	}
 
-	const mod: GameBananaMod = new GameBananaMod(modId, 1, modData, maps);
+	const mod: GameBananaMod = new GameBananaMod(
+		modDataId,
+		lastCreditGroupId,
+		contributors,
+		modData,
+		maps,
+	);
 
 	return mod;
 }
 
-async function fetchGoogleDriveData(modId: number, googleDriveId: string) {
+async function fetchGoogleDriveData(
+	modDataId: number,
+	hyperlink: string,
+	googleDriveId: string,
+) {
 	const downloadUrl: string = `https://drive.google.com/uc?export=download&id=${googleDriveId}`;
 	const maps: CelesteMap[] = [];
 
 	try {
-		maps.push(...(await createMaps(modId, downloadUrl)));
+		maps.push(...(await createMaps(modDataId, downloadUrl)));
 	} catch (error) {
 		console.error(error);
 	}
 
-	const mod = new GoogleDrive(modId, maps);
+	const mod: GoogleDrive = new GoogleDrive(
+		modDataId,
+		hyperlink,
+		downloadUrl,
+		maps,
+	);
 
 	return mod;
 }
