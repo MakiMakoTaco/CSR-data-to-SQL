@@ -4,6 +4,7 @@ import path, { join } from 'path';
 import { google } from 'googleapis';
 import { exit } from 'process';
 import sortData from './sortData';
+import { Ids } from '../../types/Ids';
 
 // Create Google Sheets API client
 const sheetsAPI = google.sheets({
@@ -45,18 +46,13 @@ async function getSheetData(filePath: string = join(__dirname, './sqlFiles')) {
 
 		console.log('Received sheet titles');
 
-		interface ids {
-			tierPresets: Map<string, number>;
-			modData: Map<string, number>;
-			players: Map<string, number>;
-			modId: number;
-		}
-
-		let ids: ids = {
+		let ids: Ids = {
+			contributors: new Map(),
 			tierPresets: new Map(),
 			modData: new Map(),
 			players: new Map(),
 			modId: 1,
+			creditGroupId: 1,
 		};
 		for (let i = 0; i < sheetNames.data.sheets.length; i++) {
 			const sheetName = sheetNames.data.sheets[i].properties?.title;

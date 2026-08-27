@@ -4,6 +4,7 @@
 import type { sheets_v4 } from 'googleapis';
 import type { BaseModData } from '../../classes/Mod';
 import type { Color } from '../../types/Color';
+import type { Ids } from '../../types/Ids';
 
 // Classes
 import { Side, DLC } from '../../classes/Side';
@@ -24,15 +25,7 @@ import { exit } from 'node:process';
 
 const filePath = join(__dirname, '../../../output');
 
-async function sortData(
-	sheetData: sheets_v4.Schema$Sheet,
-	ids: {
-		tierPresets: Map<string, number>;
-		modData: Map<string, number>;
-		players: Map<string, number>;
-		modId: number;
-	},
-) {
+async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 	const conditionalFormats = sheetData.conditionalFormats;
 
 	if (!sheetData.properties || !sheetData.properties.title) {
@@ -240,6 +233,7 @@ async function sortData(
 
 		if (!ids.modData.has(hyperlink)) {
 			let mod: BaseModData;
+
 			if (hyperlink.includes('gamebanana.com')) {
 				if (
 					!['/collections/', '/mods/'].some((type) => hyperlink.includes(type))
