@@ -7,7 +7,7 @@
 - [x] create the submitter and credit groups
 - [x] add mod to player class if cleared
 - [x] create mod class for each row, checking if it already has a mod data id
-- [ ] add mod downloads to Download class
+- [x] add mod downloads to Download class
 - [ ] add mod requiredments
 - [ ] create SQL statements
 - [ ] attempt to find existing players using the google forms response sheet and discord bot (maybe command to run on bot)

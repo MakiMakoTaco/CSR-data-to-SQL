@@ -7,9 +7,16 @@ import CelesteMap from '../../classes/Map';
 
 async function getMapNames(downloadUrl: string) {
 	let downloadResponse: Response = await fetch(downloadUrl);
-	const files: Unzipped = unzipSync(
-		new Uint8Array(await downloadResponse.arrayBuffer()),
-	);
+	const zipName = downloadResponse.headers
+		.get('content-disposition')
+		?.split('"', 2)[1];
+	const arrayBuffer = downloadResponse.arrayBuffer().then((buf) => {
+		return { length: buf.byteLength, files: new Uint8Array(buf) };
+	});
+
+	console.log(zipName, await arrayBuffer);
+
+	const files: Unzipped = unzipSync((await arrayBuffer).files);
 
 	const SIDs: string[] = [];
 	Object.keys(files).forEach((file: string) => {
@@ -39,23 +46,26 @@ async function getMapNames(downloadUrl: string) {
 			mapNames.push(map.trim());
 		}
 
-		return mapNames;
+		return {
+			mapNames,
+			data: { name: zipName, size: (await arrayBuffer).length },
+		};
 	} else {
 		throw new Error('Unable to find "Dialog/English.txt"');
 	}
 }
 
-async function createMaps(modId: number, downloadUrl: string) {
-	const mapNames: string[] = await getMapNames(downloadUrl);
+async function createMaps(downloadUrl: string) {
+	const mapData = await getMapNames(downloadUrl);
 
 	try {
 		const maps: CelesteMap[] = [];
-		mapNames.forEach((mapName: string, index: number) => {
-			const map = new CelesteMap(modId, index, mapName);
+		mapData.mapNames.forEach((mapName: string, index: number) => {
+			const map = new CelesteMap(index, mapName);
 			maps.push(map);
 		});
 
-		return maps;
+		return { maps, data: mapData.data };
 	} catch (error) {
 		throw error;
 	}

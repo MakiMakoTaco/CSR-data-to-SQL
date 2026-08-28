@@ -1,5 +1,6 @@
 import checkContributor from '../functions/utils/checkContributor';
 import CreditGroup from './CreditGroup';
+import Download from './Download';
 import CelesteMap from './Map';
 import Contributor from './ModContributor';
 
@@ -92,6 +93,7 @@ class GameBananaMod extends BaseGameBanana {
 	feedbackInstructions?: string | undefined;
 	credits: CreditGroup[];
 	maps: CelesteMap[];
+	downloads: Download[];
 	createdAt: EpochTimeStamp;
 	lastModified: EpochTimeStamp;
 
@@ -113,6 +115,10 @@ class GameBananaMod extends BaseGameBanana {
 		this.createdAt = modData._tsDateAdded; //Format correctly
 		this.lastModified = modData._tsDateModified; //Format correctly
 
+		if (modData._sFeedbackInstructions) {
+			this.feedbackInstructions = modData._sFeedbackInstructions;
+		}
+
 		this.credits = [];
 		modData._aCredits.forEach((group: any, index: number) => {
 			const creditGroup = new CreditGroup(
@@ -125,25 +131,34 @@ class GameBananaMod extends BaseGameBanana {
 			this.credits.push(creditGroup);
 		});
 
-		if (modData._sFeedbackInstructions) {
-			this.feedbackInstructions = modData._sFeedbackInstructions;
-		}
+		this.downloads = [];
+		modData._aFiles.forEach((file: any, index: number) => {
+			const download: Download = new Download(
+				index,
+				file._sFile,
+				file._nFilesize,
+				file._sDownloadUrl,
+				file._aModManagerIntegrations[0]._sDownloadUrl,
+			);
+
+			this.downloads.push(download);
+		});
 	}
 }
 
 class GoogleDrive extends BaseModData {
-	// downloadPage: string;
+	download: Download;
 	maps: CelesteMap[];
 
 	constructor(
 		id: number,
 		page: string,
-		downloadUrl: string,
+		download: Download,
 		maps: CelesteMap[] = [],
 	) {
 		super(id, page);
 
-		// this.downloadPage = downloadUrl;
+		this.download = download;
 		this.maps = maps;
 	}
 }
