@@ -6,7 +6,7 @@ import {
 import CelesteMap from '../../classes/Map';
 import createMaps from './getMapNames';
 import { google } from 'googleapis';
-import Contributor from '../../classes/ModContributor';
+import Contributor from '../../classes/Contributor';
 import Download from '../../classes/Download';
 
 const baseGamebananaUrl = 'https://gamebanana.com/apiv11';
@@ -80,7 +80,9 @@ async function fetchGameBananaModData(
 	const modData: any = await modResponse.json();
 
 	const maps: CelesteMap[] = [];
-	maps.push(...(await createMaps(modData._aFiles[0]._sDownloadUrl)).maps);
+	maps.push(
+		...(await createMaps(modDataId, modData._aFiles[0]._sDownloadUrl)).maps,
+	);
 
 	const mod: GameBananaMod = new GameBananaMod(
 		modDataId,
@@ -100,10 +102,11 @@ async function fetchGoogleDriveData(
 ) {
 	const downloadUrl: string = `https://drive.google.com/uc?export=download&id=${googleDriveId}`;
 	const maps: CelesteMap[] = [];
-	const mapsData = await createMaps(downloadUrl);
+	const mapsData = await createMaps(modDataId, downloadUrl);
 
 	maps.push(...mapsData.maps);
 	const download: Download = new Download(
+		modDataId,
 		1,
 		mapsData.data.name ?? `googledrive_${googleDriveId}`,
 		mapsData.data.size,

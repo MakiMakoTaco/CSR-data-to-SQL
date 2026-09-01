@@ -55,13 +55,13 @@ async function getMapNames(downloadUrl: string) {
 	}
 }
 
-async function createMaps(downloadUrl: string) {
+async function createMaps(modDataId: number, downloadUrl: string) {
 	const mapData = await getMapNames(downloadUrl);
 
 	try {
 		const maps: CelesteMap[] = [];
 		mapData.mapNames.forEach((mapName: string, index: number) => {
-			const map = new CelesteMap(index, mapName);
+			const map = new CelesteMap(modDataId, index, mapName);
 			maps.push(map);
 		});
 

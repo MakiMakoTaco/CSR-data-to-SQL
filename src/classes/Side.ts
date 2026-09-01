@@ -1,5 +1,8 @@
 import type { Color } from '../types/Color';
 import letterToNumber from '../functions/utils/letterToNumber';
+import { appendFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { formatColor, formatString } from '../functions/utils/formatSql';
 
 enum SideType {
 	standard,
@@ -9,11 +12,14 @@ enum SideType {
 }
 
 class Side {
-	id: number;
-	name: string;
-	type: SideType;
 	archived: boolean;
+
+	id: number;
+
+	name: string;
 	quickInstall?: string;
+
+	type: SideType;
 
 	constructor(name: string, quickInstall?: string) {
 		this.name = name;
@@ -38,12 +44,35 @@ class Side {
 			this.type = SideType.other;
 		}
 	}
+
+	protected typeConverter() {
+		switch (this.type) {
+			case SideType.standard:
+				return 'standard';
+			case SideType.catstare:
+				return 'catstare';
+			case SideType.dlc:
+				return 'dlc';
+			case SideType.other:
+				return 'other';
+		}
+	}
+
+	createSqlStatement() {
+		const path: string = join(process.cwd(), 'temp/side.sql');
+
+		appendFileSync(
+			path,
+			`,\n(${this.id}, ${formatString(this.name)}, ${formatString(this.typeConverter())}, null, null, null, false, ${formatString(this.quickInstall)})`,
+		);
+	}
 }
 
 class DLC extends Side {
+	clearsForRank: number;
+
 	color?: Color;
 	colorPlus: Color;
-	clearsForRank: number;
 
 	constructor(
 		name: string,
@@ -59,6 +88,15 @@ class DLC extends Side {
 		this.colorPlus = colorPlus;
 		this.clearsForRank = clearsForRank;
 		this.archived = archived;
+	}
+
+	createSqlStatement() {
+		const path: string = join(process.cwd(), 'temp/side.sql');
+
+		appendFileSync(
+			path,
+			`,\n(${this.id}, ${formatString(this.name)}, ${formatString(this.typeConverter())}, ${this.clearsForRank}, ${formatColor(this.color)}, ${formatColor(this.colorPlus)}, ${this.archived}, ${formatString(this.quickInstall)})`,
+		);
 	}
 }
 

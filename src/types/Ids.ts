@@ -1,4 +1,4 @@
-import Contributor from '../classes/ModContributor';
+import Contributor from '../classes/Contributor';
 
 interface Ids {
 	contributors: Map<string, Contributor>;

@@ -1,4 +1,4 @@
-import Contributor from '../../classes/ModContributor';
+import Contributor from '../../classes/Contributor';
 
 function checkContributor(contributors: Map<string, Contributor>, player: any) {
 	let contributor = contributors.get(player._sName);

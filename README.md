@@ -8,6 +8,6 @@
 - [x] add mod to player class if cleared
 - [x] create mod class for each row, checking if it already has a mod data id
 - [x] add mod downloads to Download class
-- [ ] add mod requiredments
+- [ ] add mod requirements
 - [ ] create SQL statements
 - [ ] attempt to find existing players using the google forms response sheet and discord bot (maybe command to run on bot)

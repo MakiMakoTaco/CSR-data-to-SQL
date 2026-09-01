@@ -3,7 +3,9 @@ import { join } from 'path';
 
 // const { getSheetData } = require('./utils/checkSheets');
 
-function setupSQLFiles(filePath: string = join(__dirname, './sqlFiles')) {
+function setupSqlFiles() {
+	const filePath: string = join(process.cwd(), 'temp');
+
 	if (!existsSync(filePath)) {
 		mkdirSync(filePath);
 	}
@@ -12,17 +14,22 @@ function setupSQLFiles(filePath: string = join(__dirname, './sqlFiles')) {
 
 	writeFileSync(
 		join(filePath, 'authors.sql'),
-		'INSERT INTO authors(group_id, name, role_name, profile_url, extra_url) VALUES',
+		'INSERT INTO authors(group_id, order_id, role_name, contributor_id) VALUES',
+	);
+
+	writeFileSync(
+		join(filePath, 'contributors.sql'),
+		'INSERT INTO contributors(id, name, title, progile_url, avatar_url) VALUES',
 	);
 
 	writeFileSync(
 		join(filePath, 'credit_groups.sql'),
-		'INSERT INTO credit_groups(mod_id, order_index, name) VALUES',
+		'INSERT INTO credit_groups(id, mod_id, order_index, name) VALUES',
 	);
 
 	writeFileSync(
 		join(filePath, 'download_links.sql'),
-		'INSERT INTO download_links(mod_id, order_index, file_name, file_size, description, manual_url, everest_url) VALUES',
+		'INSERT INTO download_links(mod_id, order_index, file_name, file_size, version, description, manual_url, everest_url) VALUES',
 	);
 
 	writeFileSync(
@@ -42,7 +49,7 @@ function setupSQLFiles(filePath: string = join(__dirname, './sqlFiles')) {
 
 	writeFileSync(
 		join(filePath, 'mod_data.sql'),
-		'INSERT INTO mod_tiers(id, gb_name, is_child, parent_id, required_map_clears, submitter_id, category, version, gb_page, gb_download_page, description, text, media, gb_tags, feedback_instructions, created_at) VALUES',
+		'INSERT INTO mod_tiers(id, gb_name, is_child, parent_id, submitter_id, page, gb_download_page, description, text, category, version, media, gb_tags, feedback_instructions, created_at, updated_at) VALUES',
 	);
 
 	writeFileSync(
@@ -81,4 +88,4 @@ function setupSQLFiles(filePath: string = join(__dirname, './sqlFiles')) {
 	);
 }
 
-export default setupSQLFiles;
+export default setupSqlFiles;
