@@ -22,7 +22,7 @@ class Author {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/authors.sql');
+		const path: string = join(process.cwd(), 'output/authors.sql');
 
 		appendFileSync(
 			path,

@@ -1,34 +1,30 @@
-interface PlayerClears {
-	modId: number;
-	cleared: true;
-	proof: string;
-	submittedAt: Date;
-}
+import { appendFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { formatString } from '../functions/utils/formatSql';
+import { PlayerClear } from '../types/PlayerClear';
 
 class Player {
-	clears: [PlayerClears?];
-	discordId?: string;
+	public id: number;
+	public name: string;
 
-	constructor(
-		public id: number,
-		public name: string,
-	) {
-		this.clears = [];
+	constructor(id: number, name: string) {
+		this.id = id;
+		this.name = name;
 	}
 
-	public addClear(modId: number, proof: string) {
-		const modData: PlayerClears = {
-			modId: modId,
-			cleared: true,
-			proof: proof,
-			submittedAt: new Date(Date.now()),
-		};
+	createSqlStatement() {
+		const path: string = join(process.cwd(), 'output/players.sql');
 
-		if (!this.clears) {
-			this.clears = [modData];
-		} else {
-			this.clears.push(modData);
-		}
+		appendFileSync(path, `,\n(${this.id}, ${formatString(this.name)})`);
+	}
+
+	addClear(clear: PlayerClear) {
+		const path: string = join(process.cwd(), 'output/player_progress.sql');
+
+		appendFileSync(
+			path,
+			`,\n(${this.id}, ${clear.modId}, ${clear.cleared}, ${formatString(clear.proof)})`,
+		);
 	}
 }
 

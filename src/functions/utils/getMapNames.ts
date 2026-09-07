@@ -1,45 +1,52 @@
-import type { Unzipped } from 'fflate';
-import { unzipSync, strFromU8 } from 'fflate';
+import type { ZipEntry } from 'unzipit';
+
+import { HTTPRangeReader, unzip } from 'unzipit';
 import CelesteMap from '../../classes/Map';
 
 // const input = 'https://gamebanana.com/dl/1539722' || 'https://filecache38.gamebanana.com/mods/cat_isle_c7728.zip';
 // const input = 'https://drive.google.com/uc?export=download&id=1KhVFlc2d0PDE_ceimGwzd-iaRuSwrfuY';
 
 async function getMapNames(downloadUrl: string) {
-	let downloadResponse: Response = await fetch(downloadUrl);
-	const zipName = downloadResponse.headers
-		.get('content-disposition')
-		?.split('"', 2)[1];
-	const arrayBuffer = downloadResponse.arrayBuffer().then((buf) => {
-		return { length: buf.byteLength, files: new Uint8Array(buf) };
-	});
+	let entries!: { [key: string]: ZipEntry };
 
-	console.log(zipName, await arrayBuffer);
+	try {
+		const reader = new HTTPRangeReader(downloadUrl);
+		entries = (await unzip(reader)).entries;
+	} catch (error: any) {
+		throw new Error(error);
+	}
 
-	const files: Unzipped = unzipSync((await arrayBuffer).files);
+	let size: number = 0;
+	let dialog!: ArrayBuffer;
+	const sids: string[] = [];
 
-	const SIDs: string[] = [];
-	Object.keys(files).forEach((file: string) => {
+	for (const [name, entry] of Object.entries(entries)) {
+		size += entry.size;
+
+		if (['Dialog/English.txt', 'Dialog/english.txt'].includes(name)) {
+			dialog = await entry.arrayBuffer();
+		}
+
 		const binFileCheck: RegExpMatchArray | null =
-			file.match(/Maps\/(.+?)\.bin/);
+			name.match(/Maps\/(.+?)\.bin/);
 
 		if (binFileCheck) {
-			SIDs.push(binFileCheck[1].replaceAll(/[/-]/g, '_'));
+			sids.push(binFileCheck[1].replaceAll(/[ /-]/g, '_'));
 		}
-	});
-
-	const dialog: Uint8Array<ArrayBuffer> = files['Dialog/English.txt'];
+	}
 
 	if (dialog) {
 		const mapNames: string[] = [];
-		for (const sid of SIDs) {
+		for (const sid of sids) {
 			const reg: RegExp = new RegExp(`(?<=${sid}= *\\r?\\n?).+`, 'i');
 
-			const text: string = strFromU8(dialog);
+			const text: string = new TextDecoder().decode(dialog);
 			const map: string | undefined = text.match(reg)?.[0];
 
 			if (!map) {
-				console.error(`Unable to find ingame name for SID ${sid}`);
+				console.warn(
+					`\x1b[33mUnable to find ingame name for SID ${sid}\x1b[0m`,
+				);
 				continue;
 			}
 
@@ -48,7 +55,7 @@ async function getMapNames(downloadUrl: string) {
 
 		return {
 			mapNames,
-			data: { name: zipName, size: (await arrayBuffer).length },
+			size,
 		};
 	} else {
 		throw new Error('Unable to find "Dialog/English.txt"');
@@ -61,11 +68,11 @@ async function createMaps(modDataId: number, downloadUrl: string) {
 	try {
 		const maps: CelesteMap[] = [];
 		mapData.mapNames.forEach((mapName: string, index: number) => {
-			const map = new CelesteMap(modDataId, index, mapName);
+			const map = new CelesteMap(modDataId, index + 1, mapName);
 			maps.push(map);
 		});
 
-		return { maps, data: mapData.data };
+		return { maps, size: mapData.size };
 	} catch (error) {
 		throw error;
 	}

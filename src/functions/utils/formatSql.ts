@@ -27,10 +27,28 @@ function formatArray(array: string[]) {
 	return `ARRAY[${array.map((tag) => formatString(tag)).join(', ')}]`;
 }
 
+function formatDoubleArray(array: string[][]) {
+	if (array.length === 0 || array[0].length === 0) return null;
+
+	return `ARRAY[${array.map((requirements) => `[${formatString(requirements[0])}, ${formatString(requirements[1])}]`).join(', ')}]`;
+}
+
 function formatColor(color: Color | undefined) {
 	const { red, green, blue } = rgbToHex(color);
 
 	return `decode('${red}${green}${blue}', 'hex')`;
 }
 
-export { formatString, formatArray, formatColor };
+function formatTimestamp(time: EpochTimeStamp | undefined) {
+	if (!time) return null;
+
+	return `to_timestamp(${time})`;
+}
+
+export {
+	formatString,
+	formatArray,
+	formatDoubleArray,
+	formatColor,
+	formatTimestamp,
+};

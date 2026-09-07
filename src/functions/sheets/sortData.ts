@@ -4,6 +4,7 @@
 import type { sheets_v4 } from 'googleapis';
 import type { Color } from '../../types/Color';
 import type { Ids } from '../../types/Ids';
+import type { PlayerClear } from '../../types/PlayerClear';
 
 // Classes
 import { Side, DLC } from '../../classes/Side';
@@ -18,11 +19,8 @@ import {
 	fetchGameBananaParentData,
 	fetchGoogleDriveData,
 } from '../utils/fetchModData';
-import { appendFile, appendFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { exit } from 'node:process';
-
-const filePath = join(__dirname, '../../../output');
+import { appendFileSync } from 'node:fs';
+import path from 'node:path';
 
 async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 	const conditionalFormats = sheetData.conditionalFormats;
@@ -32,9 +30,15 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 	}
 
 	const sheetName: string = sheetData.properties.title;
-	console.log(`Received data, starting processing`);
+	console.log('\x1b[32m✅ Received data\x1b[0m');
+	console.log('Starting processing');
 
-	let side: Side | DLC = new Side(sheetName);
+	let side: Side | DLC = new Side(
+		sheetName,
+		sheetData.data?.[0].rowData?.[3].values?.[0].hyperlink ?? undefined,
+	);
+	if (!['DLC', 'Archived'].includes(sheetName)) side.createSqlStatement();
+
 	const standardTiers = [
 		'Bronze',
 		'Silver',
@@ -50,12 +54,11 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 	}
 
 	let tier: Tier;
+	let tierIndex: number = 1;
 	let tierId: number = 1;
 	let tierName: string = '';
 
-	let tierIndex: number = 0;
-
-	const playerIndex: [Player?] = [];
+	const playerIndex: Player[] = [];
 
 	for (let i = 1; i < sheetData.data[0].rowData.length; i++) {
 		if (i === 2) {
@@ -65,6 +68,9 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 		const rowData = sheetData.data[0].rowData;
 		const rowValues = rowData[i].values;
 		const cellText = rowValues?.[0].formattedValue;
+
+		// if (cellText !== 'Souper Madeline Climbs Soup Mountain 64') continue;
+		// console.log(cellText);
 
 		if (!rowValues || !cellText) continue;
 
@@ -82,11 +88,7 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 				);
 
 				side.color = defaultColorFormat?.booleanRule?.format?.backgroundColor;
-
-				appendFileSync(
-					join(filePath, 'side.json'),
-					`,"${side.name}": ${JSON.stringify(side)}`,
-				);
+				side.createSqlStatement();
 			}
 
 			continue;
@@ -99,14 +101,12 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 				const playerName = rowValues[index]?.formattedValue;
 
 				if (playerName) {
-					const existingPlayer = ids.players.get(playerName);
-					const player: Player = new Player(
-						existingPlayer ? existingPlayer : ids.players.size + 1,
-						playerName,
-					);
+					let player: Player | undefined = ids.players.get(playerName);
+					if (!player) {
+						player = new Player(ids.players.size + 1, playerName);
+						player.createSqlStatement();
 
-					if (!existingPlayer) {
-						ids.players.set(player.name, player.id);
+						ids.players.set(player.name, player);
 					}
 
 					playerIndex.push(player);
@@ -114,7 +114,7 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 			}
 
 			console.log(
-				`\x1b[32mSuccessfully sorted ${ids.players.size} players\x1b[0m`,
+				`\x1b[32mSuccessfully sorted ${playerIndex.length} players\x1b[0m`,
 			);
 
 			continue;
@@ -122,7 +122,11 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 
 		if (
 			cellText.includes(' Challenges - Clear Any ') ||
-			['DLC', 'Archived'].includes(sheetName)
+			(['DLC', 'Archived'].includes(sheetName) &&
+				JSON.stringify(rowValues[0].effectiveFormat?.backgroundColor) !==
+					JSON.stringify(
+						rowData[i - 1].values?.[0].effectiveFormat?.backgroundColor,
+					))
 		) {
 			const colorPlus = rowValues[0]?.effectiveFormat?.backgroundColor ?? {
 				red: 0,
@@ -141,6 +145,8 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 					colorPlus,
 					tierClears,
 					sheetName === 'Archived' ? true : false,
+					undefined,
+					rowValues[0].hyperlink ?? undefined,
 				);
 
 				continue;
@@ -173,7 +179,12 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 					color = rowData[i + 1].values?.[0].effectiveFormat
 						?.backgroundColor ?? { red: 0, green: 0, blue: 0 };
 				}
-				if (!color) continue;
+				if (!color) {
+					console.error(
+						'\x1b[31mNo Color found when trying to create a new tier\x1b[0m',
+					);
+					continue;
+				}
 
 				const newTier = new TierPreset(
 					ids.tierPresets.size + 1,
@@ -181,8 +192,9 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 					sheetName === 'Catstare' ? false : true,
 					color,
 					colorPlus,
-					tierIndex++,
+					tierIndex,
 				);
+				newTier.createSqlStatement();
 
 				ids.tierPresets.set(tierName, newTier.id);
 				presetTierId = newTier.id;
@@ -194,9 +206,9 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 				tierId =
 					(Number(side.name.split(' ')[1]) - 1) * standardTiers.length +
 					standardTiers.indexOf(tierName) +
-					101000;
+					11000;
 			} else if (sheetName === 'Catstare') {
-				tierId = 100000 + tierIndex - 1;
+				tierId = 10000 + tierIndex - 1;
 			} else if (sheetName === 'Super-Side') {
 				tierId = tierIndex;
 			} else {
@@ -208,69 +220,91 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 
 			tier = new Tier(
 				tierId,
-				tierName,
 				side.id,
 				presetTierId,
-				!tierName.includes('DLC') ? tierClears : undefined,
+				!tierName.includes('DLC') ? tierClears : null,
 			);
+			tier.createSqlStatement();
+			tierIndex++;
 
-			console.log(`Starting processing for ${tierName} in ${side.name}`);
-			appendFileSync(
-				join(filePath, 'tier.json'),
-				`,"${tier.name}": ${JSON.stringify(tier)}`,
-			);
+			console.log(`Starting maps for ${tierName}`);
 
-			continue;
+			if (!['DLC', 'Archived'].includes(sheetName)) continue;
 		}
+
+		console.log(`Processing data for ${cellText}`);
 
 		// Get mod data
 		const hyperlink = rowValues[0].hyperlink;
 		if (!hyperlink) continue;
-		// if (!hyperlink.includes('drive.google.com')) continue;
 
 		let modDataId: number = ids.modData.get(hyperlink) ?? ids.modDataId;
 
 		if (!ids.modData.has(hyperlink)) {
 			ids.modData.set(hyperlink, modDataId);
 
-			let mod: BaseModData;
+			let mod!: BaseModData | null;
 
 			if (hyperlink.includes('gamebanana.com')) {
 				if (
-					!['/collections/', '/mods/'].some((type) => hyperlink.includes(type))
+					!['/collections/', '/mods/', '/wips/'].some((type) =>
+						hyperlink.includes(type),
+					)
 				) {
+					mod = new BaseModData(ids.modDataId, hyperlink);
 					console.error(
-						`Unable to create new GameBanana class for mod at row ${i + 1} (${cellText}, ${hyperlink})`,
+						`\x1b[31mUnable to create new GameBanana class for mod at row ${i + 1} (${cellText}, ${hyperlink})\x1b[0m`,
 					);
-					continue;
-				}
+					appendFileSync(
+						path.join(process.cwd(), 'output/log.txt'),
+						`ID: ${ids.modDataId}, Unable to create new GameBanana class for mod ${cellText}: ${hyperlink}. Created base mod without any applicable children instead\n`,
+					);
+				} else {
+					const splitHyperlink: string[] = hyperlink.split('/');
+					const gamebananaId: string = splitHyperlink.pop() ?? '';
+					const modType: string = splitHyperlink.pop() ?? '';
 
-				const gamebananaId: string = hyperlink.split('/').pop() ?? '';
-				if (!gamebananaId) {
-					throw new Error(
-						`Unable to find GameBanana ID for new mod "${cellText}"`,
-					);
-				}
+					if (!gamebananaId) {
+						console.error(
+							`\x1b[31mUnable to find GameBanana ID for new mod ${cellText}\x1b[0m`,
+						);
+						appendFileSync(
+							path.join(process.cwd(), 'output/log.txt'),
+							`Unable to find GameBanana ID for new mod ${cellText}\n`,
+						);
+						continue;
+					}
 
-				if (hyperlink.includes('/collections/')) {
-					console.log('Mod is a collection, fetching profile page');
+					if (hyperlink.includes('/collections/')) {
+						console.log('Mod is a collection, fetching profile page');
 
-					const data = await fetchGameBananaParentData(
-						ids.modDataId,
-						gamebananaId,
-						ids.creditGroupId,
-						ids.contributors,
-					);
-					ids.modDataId = data.modDataId + 1;
-					mod = data.parent;
-				} else if (hyperlink.includes('/mods/')) {
-					mod = await fetchGameBananaModData(
-						ids.modDataId,
-						gamebananaId,
-						ids.creditGroupId,
-						ids.contributors,
-					);
-					ids.modDataId++;
+						const data = await fetchGameBananaParentData(
+							ids.modDataId,
+							gamebananaId,
+							ids.creditGroupId,
+							ids.contributors,
+						);
+
+						ids.modDataId = data.modDataId + 1;
+						ids.creditGroupId = data.lastCreditGroupId;
+						mod = data.parent;
+					} else if (
+						hyperlink.includes('/mods/') ||
+						hyperlink.includes('/wips/')
+					) {
+						const data = await fetchGameBananaModData(
+							ids.modDataId,
+							modType,
+							gamebananaId,
+							ids.creditGroupId,
+							ids.contributors,
+						);
+
+						if (data) {
+							ids.creditGroupId = data.lastCreditGroupId;
+							mod = data.mod;
+						}
+					}
 				}
 			} else if (hyperlink.includes('drive.google.com')) {
 				const googleDriveId: string | undefined =
@@ -278,7 +312,11 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 
 				if (!googleDriveId) {
 					console.error(
-						`Unable to find Google Drive ID for mod with name ${cellText}`,
+						`\x1b[31mUnable to find Google Drive ID for mod with name ${cellText}\x1b[0m`,
+					);
+					appendFileSync(
+						path.join(process.cwd(), 'output/log.txt'),
+						`Unable to find Google Drive ID for mod with name ${cellText}\n`,
 					);
 					continue;
 				}
@@ -288,16 +326,34 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 					hyperlink,
 					googleDriveId,
 				);
-				ids.modDataId++;
 			} else if (hyperlink.includes('docs.google.com')) {
 				mod = new BaseModData(ids.modDataId, hyperlink);
-				ids.modDataId++;
 			} else {
 				console.error(
-					`Unable to create new BaseMod class for mod at row ${i + 1} (${cellText}, ${hyperlink})`,
+					`\x1b[31mUnable to create new BaseMod class for mod at row ${i + 1} (${cellText}, ${hyperlink})\x1b[0m`,
+				);
+				appendFileSync(
+					path.join(process.cwd(), 'output/log.txt'),
+					`Unable to create new BaseMod class for mod at row ${i + 1} (${cellText}, ${hyperlink})\n`,
 				);
 				continue;
 			}
+
+			if (mod) {
+				mod.createSqlStatement();
+			} else {
+				mod = new BaseModData(ids.modDataId, hyperlink);
+				mod.createSqlStatement();
+
+				appendFileSync(
+					path.join(process.cwd(), 'output/log.txt'),
+					`Mod Data ID ${ids.modDataId} has been created with base mod data\n`,
+				);
+			}
+
+			ids.modDataId++;
+		} else {
+			console.log(`Found existing mod data for ${cellText}`);
 		}
 
 		const mod = new Mod(
@@ -307,6 +363,9 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 			tierId,
 			rowValues[0].note ?? undefined,
 		);
+		mod.createSqlStatement();
+
+		ids.modId++;
 
 		for (let index = 1; index < rowValues.length; index++) {
 			const player = playerIndex[index - 1];
@@ -315,18 +374,12 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 
 			if (!player || !cleared || !proof) continue;
 
-			player.addClear(ids.modId, proof);
+			const clear: PlayerClear = { cleared: true, modId: mod.id, proof };
+			player.addClear(clear);
 		}
 	}
 
-	if (!['DLC', 'Archived'].includes(sheetName)) {
-		appendFileSync(
-			join(filePath, 'side.json'),
-			`,"${side.name}": ${JSON.stringify(side)}`,
-		);
-		console.log(ids.tierPresets);
-	}
-
+	console.log(`\x1b[32mFinished processing ${side.name}\x1b[0m`);
 	return ids;
 }
 

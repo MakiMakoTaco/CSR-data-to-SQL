@@ -15,7 +15,7 @@ class CelesteMap {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/maps.sql');
+		const path: string = join(process.cwd(), 'output/maps.sql');
 
 		appendFileSync(
 			path,

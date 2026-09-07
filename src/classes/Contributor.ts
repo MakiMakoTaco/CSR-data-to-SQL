@@ -25,7 +25,7 @@ class Contributor {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/contributors.sql');
+		const path: string = join(process.cwd(), 'output/contributors.sql');
 
 		appendFileSync(
 			path,

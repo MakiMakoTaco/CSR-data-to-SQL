@@ -35,7 +35,7 @@ class Download {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/download_links.sql');
+		const path: string = join(process.cwd(), 'output/download_links.sql');
 
 		appendFileSync(
 			path,

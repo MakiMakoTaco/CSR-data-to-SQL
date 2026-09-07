@@ -36,7 +36,7 @@ class CreditGroup {
 			if (contributor) {
 				const creditAuthor: Author = new Author(
 					id,
-					index,
+					index + 1,
 					author._sRole,
 					contributor.id,
 				);
@@ -46,7 +46,7 @@ class CreditGroup {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/credit_groups.sql');
+		const path: string = join(process.cwd(), 'output/credit_groups.sql');
 
 		appendFileSync(
 			path,

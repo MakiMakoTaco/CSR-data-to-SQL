@@ -8,9 +8,10 @@ function checkContributor(contributors: Map<string, Contributor>, player: any) {
 			contributors.size + 1,
 			player._sName,
 			player._sUserTitle,
-			player._ProfileUrl,
+			player._sProfileUrl,
 			player._sAvatarUrl,
 		);
+		newContributor.createSqlStatement();
 
 		contributors.set(player._sName, newContributor);
 	} else if (player._sProfileUrl && !contributor.profileUrl) {

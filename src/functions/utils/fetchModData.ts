@@ -5,9 +5,10 @@ import {
 } from '../../classes/Mod';
 import CelesteMap from '../../classes/Map';
 import createMaps from './getMapNames';
-import { google } from 'googleapis';
 import Contributor from '../../classes/Contributor';
 import Download from '../../classes/Download';
+import { appendFileSync } from 'fs';
+import path from 'path';
 
 const baseGamebananaUrl = 'https://gamebanana.com/apiv11';
 
@@ -40,7 +41,7 @@ async function fetchGameBananaParentData(
 
 			const record: any = collectionPage._aRecords[i];
 			console.log(
-				`Fetching data for map ${i + 1} out of ${collectionPage._aMetadata._bIsComplete ? parentProfile._nItemCount / 15 : 15}`,
+				`Fetching data for mod ${i + 1} out of ${collectionPage._aMetadata._bIsComplete ? (parentProfile._nItemCount < 15 ? parentProfile._nItemCount : parentProfile._nItemCount % 15) : 15}`,
 			);
 
 			if (record._sModelName !== 'Mod') {
@@ -51,38 +52,79 @@ async function fetchGameBananaParentData(
 				continue;
 			}
 
-			const childGamebananaId: string = record._sProfileUrl.split('/').pop();
+			const splitProfileUrl: string[] = record._sProfileUrl.split('/');
+			const childGamebananaId: string = splitProfileUrl.pop() ?? '';
+			const childGamebananaType: string = splitProfileUrl.pop() ?? '';
 
-			const mod: GameBananaMod = await fetchGameBananaModData(
-				modDataId,
-				childGamebananaId,
-				lastCreditGroupId,
-				contributors,
-			);
-			parent.children.push(mod);
+			try {
+				const data = await fetchGameBananaModData(
+					modDataId,
+					childGamebananaType,
+					childGamebananaId,
+					lastCreditGroupId,
+					contributors,
+				);
+
+				if (!data) {
+					console.error('\x1b[31mUnable to fetch data for child mod\x1b[0m');
+					appendFileSync(
+						path.join(process.cwd(), 'output/log.txt'),
+						`Unable to fetch data for child mod ${(page - 1) * 15 + (i + 1)} (${record._sName ?? null}) in ${parent.name}. ID ${modDataId} has been skipped\n`,
+					);
+					continue;
+				}
+
+				parent.children.push(data.mod);
+				lastCreditGroupId = data.lastCreditGroupId;
+			} catch (error: any) {
+				console.error(`\x1b[31m${error.message}\x1b[0m`);
+			}
 		}
 
 		hasNextPage = !collectionPage._aMetadata._bIsComplete;
 		page++;
 	}
 
-	return { modDataId, parent };
+	return { modDataId, lastCreditGroupId, parent };
 }
 
 async function fetchGameBananaModData(
 	modDataId: number,
+	modType: string,
 	gamebananaId: string | number,
 	lastCreditGroupId: number,
 	contributors: Map<string, Contributor>,
 ) {
-	const url: string = `${baseGamebananaUrl}/Mod/${gamebananaId}/ProfilePage`;
+	const type = modType === 'mods' ? 'Mod' : 'Wip';
+	const url: string = `${baseGamebananaUrl}/${type}/${gamebananaId}/ProfilePage`;
 	const modResponse: Response = await fetch(url);
 	const modData: any = await modResponse.json();
 
+	if (modData._bIsPrivate || modData._bIsTrashed || !modData || !modData._sName)
+		return null;
+
+	// let mapsData: { maps: CelesteMap[]; size: number } | null = null;
 	const maps: CelesteMap[] = [];
-	maps.push(
-		...(await createMaps(modDataId, modData._aFiles[0]._sDownloadUrl)).maps,
-	);
+
+	// try {
+	// 	mapsData = await createMaps(modDataId, modData._aFiles[0]._sDownloadUrl);
+	// } catch (error: any) {
+	// 	if (error.message.includes('failed http request')) {
+	// 		try {
+	// 			const downloadId = modData._aFiles[0]._sDownloadUrl.split('/').pop();
+	// 			mapsData = await createMaps(
+	// 				modDataId,
+	// 				`https://celestemodupdater.0x0a.de/banana-mirror/${downloadId}.zip`,
+	// 			);
+	// 		} catch (error) {
+	// 			console.error(error);
+	// 		}
+	// 	}
+	// }
+
+	// if (mapsData) {
+	// 	maps.push(...mapsData.maps);
+	// }
 
 	const mod: GameBananaMod = new GameBananaMod(
 		modDataId,
@@ -91,8 +133,9 @@ async function fetchGameBananaModData(
 		modData,
 		maps,
 	);
+	lastCreditGroupId = lastCreditGroupId + mod.credits.length;
 
-	return mod;
+	return { mod, lastCreditGroupId };
 }
 
 async function fetchGoogleDriveData(
@@ -102,25 +145,31 @@ async function fetchGoogleDriveData(
 ) {
 	const downloadUrl: string = `https://drive.google.com/uc?export=download&id=${googleDriveId}`;
 	const maps: CelesteMap[] = [];
-	const mapsData = await createMaps(modDataId, downloadUrl);
 
-	maps.push(...mapsData.maps);
-	const download: Download = new Download(
-		modDataId,
-		1,
-		mapsData.data.name ?? `googledrive_${googleDriveId}`,
-		mapsData.data.size,
-		downloadUrl,
-	);
+	try {
+		// const mapsData = await createMaps(modDataId, downloadUrl);
 
-	const mod: GoogleDrive = new GoogleDrive(
-		modDataId,
-		hyperlink,
-		download,
-		maps,
-	);
+		// maps.push(...mapsData.maps);
+		const download: Download = new Download(
+			modDataId,
+			1,
+			`googledrive_${googleDriveId}`,
+			1,
+			downloadUrl,
+		);
 
-	return mod;
+		const mod: GoogleDrive = new GoogleDrive(
+			modDataId,
+			hyperlink,
+			download,
+			maps,
+		);
+
+		return mod;
+	} catch (error) {
+		console.error(error);
+		return null;
+	}
 }
 
 export {

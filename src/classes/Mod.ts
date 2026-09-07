@@ -5,7 +5,12 @@ import CelesteMap from './Map';
 import Contributor from './Contributor';
 import { appendFileSync } from 'fs';
 import { join } from 'path';
-import { formatArray, formatString } from '../functions/utils/formatSql';
+import {
+	formatArray,
+	formatDoubleArray,
+	formatString,
+	formatTimestamp,
+} from '../functions/utils/formatSql';
 
 class Mod {
 	id: number;
@@ -30,7 +35,7 @@ class Mod {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/mods.sql');
+		const path: string = join(process.cwd(), 'output/mods.sql');
 
 		appendFileSync(
 			path,
@@ -49,11 +54,11 @@ class BaseModData {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/mod_data.sql');
+		const path: string = join(process.cwd(), 'output/mod_data.sql');
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, null, false, null, null, ${formatString(this.page)}, null, null, null, null, null, null, null, null, null, null)`,
+			`,\n(${this.id}, null, false, null, null, ${formatString(this.page)}, null, null, null, null, null, null, null, null, null, null, null, null)`,
 		);
 	}
 }
@@ -102,11 +107,11 @@ class BaseGameBanana extends BaseModData {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/mod_data.sql');
+		const path: string = join(process.cwd(), 'output/mod_data.sql');
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, ${formatString(this.name)}, false, null, ${this.submitterId}, ${formatString(this.page)}, null, null, ${formatString(this.text)}, null, null, null, ${formatArray(this.tags)}, null, ${this.createdAt}, ${this.lastModified})`,
+			`,\n(${this.id}, ${formatString(this.name)}, false, null, ${this.submitterId}, ${formatString(this.page)}, null, null, ${formatString(this.text)}, null, null, null, ${formatArray(this.tags)}, null, null, null, ${formatTimestamp(this.createdAt)}, ${formatTimestamp(this.lastModified)})`,
 		);
 	}
 }
@@ -126,7 +131,7 @@ class GameBananaParent extends BaseGameBanana {
 	}
 
 	createSqlStatement() {
-		this.createSqlStatement();
+		super.createSqlStatement();
 
 		this.children.forEach((child) => {
 			child.createSqlStatement(true, this.id);
@@ -139,9 +144,11 @@ class GameBananaMod extends BaseGameBanana {
 	category: string;
 	version: string;
 	description: string;
-	feedbackInstructions?: string | undefined;
+	devNotes: string | undefined;
+	feedbackInstructions: string | undefined;
 
 	media: string[];
+	requirements: string[][];
 
 	credits: CreditGroup[];
 	maps: CelesteMap[];
@@ -163,6 +170,10 @@ class GameBananaMod extends BaseGameBanana {
 		this.version = modData._sVersion;
 		this.description = modData._sDescription;
 
+		if (modData._sDevNotes) {
+			this.devNotes = modData._sDevNotes;
+		}
+
 		if (modData._sFeedbackInstructions) {
 			this.feedbackInstructions = modData._sFeedbackInstructions;
 		}
@@ -175,11 +186,18 @@ class GameBananaMod extends BaseGameBanana {
 			});
 		}
 
+		this.requirements = [];
+		if (modData._aRequirements && modData._aRequirements.length > 0) {
+			for (const requirement of modData._aRequirements) {
+				this.requirements.push(requirement);
+			}
+		}
+
 		this.credits = [];
 		modData._aCredits.forEach((group: any, index: number) => {
 			const creditGroup = new CreditGroup(
-				lastCreditGroupId,
-				index,
+				lastCreditGroupId + index,
+				index + 1,
 				id,
 				group,
 				contributors,
@@ -191,11 +209,11 @@ class GameBananaMod extends BaseGameBanana {
 		modData._aFiles.forEach((file: any, index: number) => {
 			const download: Download = new Download(
 				id,
-				index,
+				index + 1,
 				file._sFile,
 				file._nFilesize,
 				file._sDownloadUrl,
-				file._aModManagerIntegrations[0]._sDownloadUrl,
+				file._aModManagerIntegrations?.[0]?._sDownloadUrl,
 				file._sVersion,
 				file._sDescription,
 			);
@@ -205,11 +223,11 @@ class GameBananaMod extends BaseGameBanana {
 	}
 
 	createSqlStatement(isChild: boolean = false, parentId: number | null = null) {
-		const path: string = join(process.cwd(), 'temp/mod_data.sql');
+		const path: string = join(process.cwd(), 'output/mod_data.sql');
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, ${formatString(this.name)}, ${isChild}, ${parentId}, ${this.submitterId}, ${formatString(this.page)}, ${formatString(this.downloadPage)}, ${formatString(this.description)}, ${formatString(this.text)}, ${formatString(this.category)}, ${formatString(this.version)}, ${formatArray(this.media)}, ${formatArray(this.tags)}, ${formatString(this.feedbackInstructions)}, ${this.createdAt}, ${this.lastModified})`,
+			`,\n(${this.id}, ${formatString(this.name)}, ${isChild}, ${parentId}, ${this.submitterId}, ${formatString(this.page)}, ${formatString(this.downloadPage)}, ${formatString(this.description)}, ${formatString(this.text)}, ${formatString(this.category)}, ${formatString(this.version)}, ${formatArray(this.media)}, ${formatArray(this.tags)}, ${formatDoubleArray(this.requirements)}, ${formatString(this.devNotes)}, ${formatString(this.feedbackInstructions)}, ${formatTimestamp(this.createdAt)}, ${formatTimestamp(this.lastModified)})`,
 		);
 
 		this.downloads.forEach((download: Download) => {
@@ -243,7 +261,7 @@ class GoogleDrive extends BaseModData {
 	}
 
 	createSqlStatement() {
-		this.createSqlStatement();
+		super.createSqlStatement();
 		this.download.createSqlStatement();
 
 		this.maps.forEach((map: CelesteMap) => {

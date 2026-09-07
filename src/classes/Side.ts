@@ -59,7 +59,7 @@ class Side {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/side.sql');
+		const path: string = join(process.cwd(), 'output/sides.sql');
 
 		appendFileSync(
 			path,
@@ -91,7 +91,7 @@ class DLC extends Side {
 	}
 
 	createSqlStatement() {
-		const path: string = join(process.cwd(), 'temp/side.sql');
+		const path: string = join(process.cwd(), 'output/sides.sql');
 
 		appendFileSync(
 			path,
