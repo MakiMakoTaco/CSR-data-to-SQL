@@ -1,7 +1,3 @@
-- archived contains all previous code, which was rushed, missing out on a lot of data i required and sorting DLC wrong
-- rewrite in typescript at the same time as updating
-- currently have everything working up to creating the new mod data classes on each row
-
 # To-do
 
 - [x] create the submitter and credit groups
