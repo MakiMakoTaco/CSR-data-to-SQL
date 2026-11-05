@@ -19,7 +19,7 @@ class CelesteMap {
 
 		appendFileSync(
 			path,
-			`,\n(${this.modDataId}, ${this.modIndex}, ${formatString(this.name)})`,
+			`,\n(${this.modDataId}, ${this.modIndex}, null, ${formatString(this.name)})`, // null will be the SID
 		);
 	}
 }

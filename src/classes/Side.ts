@@ -1,5 +1,4 @@
 import type { Color } from '../types/Color';
-import letterToNumber from '../functions/utils/letterToNumber';
 import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { formatColor, formatString } from '../functions/utils/formatSql';
@@ -13,8 +12,10 @@ enum SideType {
 
 class Side {
 	archived: boolean;
+	showTierNames: boolean;
+	shoutoutOnClear: boolean;
 
-	id: number;
+	id!: number;
 
 	name: string;
 	quickInstall?: string;
@@ -27,21 +28,22 @@ class Side {
 
 		if (quickInstall) this.quickInstall = quickInstall;
 
-		if (name === 'Super-Side') {
-			this.id = 1;
+		if (name.includes('Side')) {
 			this.type = SideType.standard;
-		} else if (name.includes('Side')) {
-			this.id = letterToNumber(name.split('-')[0]) + 1;
-			this.type = SideType.standard;
+			this.showTierNames = true;
+			this.shoutoutOnClear = true;
 		} else if (name === 'Catstare') {
-			this.id = 1000;
 			this.type = SideType.catstare;
+			this.showTierNames = true;
+			this.shoutoutOnClear = false;
 		} else if (name.includes('DLC')) {
-			this.id = 1000 + Number(name.split(' ')[1]);
 			this.type = SideType.dlc;
+			this.showTierNames = false;
+			this.shoutoutOnClear = false;
 		} else {
-			this.id = 0;
 			this.type = SideType.other;
+			this.showTierNames = true;
+			this.shoutoutOnClear = false;
 		}
 	}
 
@@ -63,7 +65,7 @@ class Side {
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, ${formatString(this.name)}, ${formatString(this.typeConverter())}, null, null, null, false, ${formatString(this.quickInstall)})`,
+			`,\n(${this.id}, ${formatString(this.name)}, ${formatString(this.typeConverter())}, null, null, null, ${this.archived}, ${formatString(this.quickInstall)}, ${this.showTierNames}, ${this.shoutoutOnClear})`,
 		);
 	}
 }
@@ -95,7 +97,7 @@ class DLC extends Side {
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, ${formatString(this.name)}, ${formatString(this.typeConverter())}, ${this.clearsForRank}, ${formatColor(this.color)}, ${formatColor(this.colorPlus)}, ${this.archived}, ${formatString(this.quickInstall)})`,
+			`,\n(${this.id}, ${formatString(this.name)}, ${formatString(this.typeConverter())}, ${this.clearsForRank}, ${formatColor(this.color)}, ${formatColor(this.colorPlus)}, ${this.archived}, ${formatString(this.quickInstall)}, ${this.showTierNames}, ${this.shoutoutOnClear})`,
 		);
 	}
 }

@@ -58,7 +58,7 @@ class BaseModData {
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, null, false, null, null, ${formatString(this.page)}, null, null, null, null, null, null, null, null, null, null, null, null)`,
+			`,\n(${this.id}, false, null, null, ${formatString(this.page)}, null, null, null, null, null, null, null, null, null, null, null, null, null)`,
 		);
 	}
 }
@@ -111,7 +111,7 @@ class BaseGameBanana extends BaseModData {
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, ${formatString(this.name)}, false, null, ${this.submitterId}, ${formatString(this.page)}, null, null, ${formatString(this.text)}, null, null, null, ${formatArray(this.tags)}, null, null, null, ${formatTimestamp(this.createdAt)}, ${formatTimestamp(this.lastModified)})`,
+			`,\n(${this.id}, false, null, ${this.submitterId}, ${formatString(this.page)}, ${formatString(this.name)}, null, null, ${formatString(this.text)}, null, null, null, ${formatArray(this.tags)}, null, null, null, ${formatTimestamp(this.createdAt)}, ${formatTimestamp(this.lastModified)})`,
 		);
 	}
 }
@@ -227,7 +227,7 @@ class GameBananaMod extends BaseGameBanana {
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, ${formatString(this.name)}, ${isChild}, ${parentId}, ${this.submitterId}, ${formatString(this.page)}, ${formatString(this.downloadPage)}, ${formatString(this.description)}, ${formatString(this.text)}, ${formatString(this.category)}, ${formatString(this.version)}, ${formatArray(this.media)}, ${formatArray(this.tags)}, ${formatDoubleArray(this.requirements)}, ${formatString(this.devNotes)}, ${formatString(this.feedbackInstructions)}, ${formatTimestamp(this.createdAt)}, ${formatTimestamp(this.lastModified)})`,
+			`,\n(${this.id}, ${isChild}, ${parentId}, ${this.submitterId}, ${formatString(this.page)}, ${formatString(this.name)}, ${formatString(this.downloadPage)}, ${formatString(this.description)}, ${formatString(this.text)}, ${formatString(this.category)}, ${formatString(this.version)}, ${formatArray(this.media)}, ${formatArray(this.tags)}, ${formatDoubleArray(this.requirements)}, ${formatString(this.devNotes)}, ${formatString(this.feedbackInstructions)}, ${formatTimestamp(this.createdAt)}, ${formatTimestamp(this.lastModified)})`,
 		);
 
 		this.downloads.forEach((download: Download) => {

@@ -50,7 +50,7 @@ class CreditGroup {
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, ${this.modId}, ${this.orderIndex}, ${formatString(this.name)})`,
+			`,\n(${this.id}, ${this.modId}, ${formatString(this.name)}, ${this.orderIndex})`,
 		);
 
 		this.authors.forEach((author: Author) => {

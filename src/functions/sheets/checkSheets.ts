@@ -15,7 +15,7 @@ const spreadsheetId = '1XTAL3kgpX0bG6SBfznPX8z7Qdb7lGnQRuxeUfPZMFoU';
 
 // Define the fields to be fetched from the spreadsheet
 const spreadsheetFields =
-	'sheets(conditionalFormats(ranges.startRowIndex,booleanRule(condition.type,format.backgroundColor)),properties(title,sheetId,index,gridProperties(rowCount,columnCount)),data.rowData.values(formattedValue,effectiveFormat.backgroundColor,note,hyperlink))';
+	'sheets(conditionalFormats(ranges.startRowIndex,booleanRule(condition.type,format.backgroundColor)),properties(title,sheetId,index,gridProperties(rowCount,columnCount)),data.rowData.values(formattedValue,effectiveFormat.backgroundColor,note,hyperlink,textFormatRuns.format.link.uri))';
 
 async function getSheetData() {
 	try {
@@ -37,6 +37,8 @@ async function getSheetData() {
 			contributors: new Map(),
 			tierPresets: new Map(),
 			modData: new Map(),
+			sideId: 1,
+			tierId: 1,
 			modId: 1,
 			modDataId: 1,
 			creditGroupId: 1,
@@ -52,7 +54,7 @@ async function getSheetData() {
 				continue;
 			}
 			if (sheetName === 'Welcome & Rules') continue;
-			// if (sheetName !== 'A-Side') continue;
+			// if (!['DLC', 'Archived'].includes(sheetName)) continue;
 
 			console.log(`Fetching data for ${sheetName}`);
 			const fileInfo = await sheetsAPI.spreadsheets.get({

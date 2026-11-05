@@ -26,7 +26,7 @@ class Author {
 
 		appendFileSync(
 			path,
-			`,\n(${this.groupId}, ${this.orderIndex}, ${formatString(this.roleName)}, ${this.contributorId})`,
+			`,\n(${this.groupId}, ${this.contributorId}, ${formatString(this.roleName)}, ${this.orderIndex})`,
 		);
 	}
 }

@@ -6,6 +6,8 @@ interface Ids {
 	contributors: Map<string, Contributor>;
 	tierPresets: Map<string, number>;
 	modData: Map<string, number>;
+	sideId: number;
+	tierId: number;
 	modId: number;
 	modDataId: number;
 	creditGroupId: number;

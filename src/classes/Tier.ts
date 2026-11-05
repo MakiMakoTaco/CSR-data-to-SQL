@@ -26,7 +26,7 @@ class Tier {
 
 		appendFileSync(
 			path,
-			`,\n(${this.id}, ${this.sideId}, ${this.presetId}, ${this.clearsForRank})`,
+			`,\n(${this.id}, ${this.sideId}, ${this.presetId}, ${this.clearsForRank ?? 'null'})`,
 		);
 	}
 }

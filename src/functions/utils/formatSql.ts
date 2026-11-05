@@ -36,7 +36,7 @@ function formatDoubleArray(array: string[][]) {
 function formatColor(color: Color | undefined) {
 	const { red, green, blue } = rgbToHex(color);
 
-	return `decode('${red}${green}${blue}', 'hex')`;
+	return `'${red}${green}${blue}'`;
 }
 
 function formatTimestamp(time: EpochTimeStamp | undefined) {

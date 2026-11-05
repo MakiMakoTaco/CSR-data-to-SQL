@@ -13,7 +13,6 @@ import { BaseModData, Mod } from '../../classes/Mod';
 import { Player } from '../../classes/Player';
 
 // Utils
-import letterToNumber from '../utils/letterToNumber';
 import {
 	fetchGameBananaModData,
 	fetchGameBananaParentData,
@@ -37,7 +36,12 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 		sheetName,
 		sheetData.data?.[0].rowData?.[3].values?.[0].hyperlink ?? undefined,
 	);
-	if (!['DLC', 'Archived'].includes(sheetName)) side.createSqlStatement();
+	if (!['DLC', 'Archived'].includes(sheetName)) {
+		side.id = ids.sideId;
+		side.createSqlStatement();
+
+		ids.sideId++;
+	}
 
 	const standardTiers = [
 		'Bronze',
@@ -55,7 +59,6 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 
 	let tier: Tier;
 	let tierIndex: number = 1;
-	let tierId: number = 1;
 	let tierName: string = '';
 
 	const playerIndex: Player[] = [];
@@ -68,9 +71,6 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 		const rowData = sheetData.data[0].rowData;
 		const rowValues = rowData[i].values;
 		const cellText = rowValues?.[0].formattedValue;
-
-		// if (cellText !== 'Souper Madeline Climbs Soup Mountain 64') continue;
-		// console.log(cellText);
 
 		if (!rowValues || !cellText) continue;
 
@@ -149,6 +149,9 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 					rowValues[0].hyperlink ?? undefined,
 				);
 
+				side.id = ids.sideId;
+				ids.sideId++;
+
 				continue;
 			}
 
@@ -202,24 +205,9 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 				presetTierId = tierPreset;
 			}
 
-			if (side.name.includes('DLC')) {
-				tierId =
-					(Number(side.name.split(' ')[1]) - 1) * standardTiers.length +
-					standardTiers.indexOf(tierName) +
-					11000;
-			} else if (sheetName === 'Catstare') {
-				tierId = 10000 + tierIndex - 1;
-			} else if (sheetName === 'Super-Side') {
-				tierId = tierIndex;
-			} else {
-				tierId =
-					letterToNumber(side.name.split('-')[0]) * standardTiers.length +
-					1 +
-					tierIndex;
-			}
-
+			ids.tierId++;
 			tier = new Tier(
-				tierId,
+				ids.tierId,
 				side.id,
 				presetTierId,
 				!tierName.includes('DLC') ? tierClears : null,
@@ -235,8 +223,18 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 		console.log(`Processing data for ${cellText}`);
 
 		// Get mod data
-		const hyperlink = rowValues[0].hyperlink;
-		if (!hyperlink) continue;
+
+		const hyperlink =
+			rowValues[0].hyperlink ||
+			rowValues[0].textFormatRuns?.[0].format?.link?.uri;
+		if (!hyperlink) {
+			console.error(
+				`\x1b[31mUnable to find usable link for ${cellText}\x1b[0m`,
+				rowValues[0],
+				rowValues[0].textFormatRuns,
+			);
+			continue;
+		}
 
 		let modDataId: number = ids.modData.get(hyperlink) ?? ids.modDataId;
 
@@ -360,7 +358,7 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 			ids.modId,
 			cellText,
 			modDataId,
-			tierId,
+			ids.tierId,
 			rowValues[0].note ?? undefined,
 		);
 		mod.createSqlStatement();

@@ -10,16 +10,16 @@ async function main() {
 	console.log('Starting sheet processing');
 	try {
 		await getSheetData();
+
+		console.log('Tidying up SQL files');
+		await tidySql();
+
+		console.log(
+			'\x1b[32mFinished processing sheets and generating SQL files\x1b[0m',
+		);
 	} catch (error: any) {
 		console.log('\x1b[31m' + error + '\x1b[0m');
 	}
-
-	console.log('Tidying up SQL files');
-	tidySql();
-
-	console.log(
-		'\x1b[32mFinished processing sheets and generating SQL files\x1b[0m',
-	);
 }
 
 main();
