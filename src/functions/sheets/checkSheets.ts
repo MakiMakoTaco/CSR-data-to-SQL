@@ -54,6 +54,7 @@ async function getSheetData() {
 				continue;
 			}
 			if (sheetName === 'Welcome & Rules') continue;
+			// if (sheetName !== 'A-Side') continue;
 			// if (!['DLC', 'Archived'].includes(sheetName)) continue;
 
 			console.log(`Fetching data for ${sheetName}`);

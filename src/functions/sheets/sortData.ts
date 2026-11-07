@@ -368,7 +368,11 @@ async function sortData(sheetData: sheets_v4.Schema$Sheet, ids: Ids) {
 		for (let index = 1; index < rowValues.length; index++) {
 			const player = playerIndex[index - 1];
 			const cleared = Boolean(rowValues[index]?.formattedValue);
-			const proof = rowValues[index].hyperlink;
+			const proof =
+				rowValues[index].hyperlink ??
+				rowValues[index].textFormatRuns
+					?.map((valueFormat) => valueFormat?.format?.link?.uri)
+					.join(' ');
 
 			if (!player || !cleared || !proof) continue;
 
